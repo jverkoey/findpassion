@@ -5,6 +5,7 @@
 import twitter
 import MySQLdb
 import sys
+import settings
 
 try:
     conn = MySQLdb.connect (host = "localhost",
@@ -58,7 +59,8 @@ else:
         addExistingUser(row)
 
 api = twitter.Api(username='findpassion', password='F1nd_P4sS10n123!')
-#api.SetCache(None)
+if settings.in_dev:
+    api.SetCache(None)
 #   F1nd_P4sS10n864!
 followers = api.GetFollowers()
 
