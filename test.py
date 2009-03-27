@@ -7,22 +7,8 @@ import MySQLdb
 import sys
 import settings
 
-class Enum(object):
-    def __init__(self, names):
-        for number, name in enumerate(names):
-            setattr(self, name, number)
-
-
-class StateMachine(object):
-    def __init__(self, initial_state):
-        self.start_state = initial_state
-        self.reset()
-
-    def reset(self):    
-        self.state = self.start_state
-        self.accum = ''
-        self.negation = False
-        
+################################
+# Connect to the db.
 
 try:
     conn = MySQLdb.connect (host = "localhost",
@@ -38,6 +24,10 @@ cursor = conn.cursor()
 #row = cursor.fetchone()
 #print "server version:", row[0]
 
+
+################################
+# Get the last reply id.
+
 cursor.execute("SELECT value FROM config WHERE name=%s", ('last_reply_id'))
 row = cursor.fetchone()
 if row is None:
@@ -46,11 +36,18 @@ if row is None:
 else:
     last_reply_id = row[0]
 
-# Build up a hash map of existing users.
+################################
+# Initialize the sets of users.
+
 existing_users = {}
 disabled_users = {}
 current_users = {}
 new_users = {}
+
+
+################################
+# Functionality that could be
+# in a class.
 
 def notifyUser(screen_name, message):
     #print "---Ignoring request..."
@@ -69,20 +66,33 @@ def addExistingUser(row):
     else:
         disabled_users[row[1]] = user
 
+
+################################
+# Get all existing followers.
+
 cursor.execute("SELECT * FROM followers")
 rows = cursor.fetchall()
 if len(rows) == 0:
     print "Nobody listed yet"
 else:
-    #print "Known users:"
+    # This will add the user either to existing_users or disabled_users
     for row in rows:
         addExistingUser(row)
+
+
+################################
+# Fetch all of the followers
+# from twitter.
 
 api = twitter.Api(username='findpassion', password='F1nd_P4sS10n123!')
 if settings.in_dev:
     api.SetCache(None)
 #   F1nd_P4sS10n864!
 followers = api.GetFollowers()
+
+
+################################
+# Check for new followers
 
 if len(followers) == 0:
     print "No followers. How sad."
@@ -92,6 +102,11 @@ else:
         current_users[user.screen_name] = True
         if user.screen_name not in existing_users:
             new_users[user.screen_name] = user
+
+
+################################
+# If we have new followers,
+# add 'em to the db.
 
 if len(new_users) > 0:
     print "New users: " + str(len(new_users))
@@ -111,6 +126,11 @@ if len(new_users) > 0:
             addExistingUser(cursor.fetchone())
             notifyUser(screen_name, "Thanks for following, you can now access all of the findpassion features!")
 
+
+################################
+# Deactivate anyone that's not
+# following anymore
+
 newly_deactivated = {}
 for screen_name in existing_users:
     if screen_name not in current_users:
@@ -125,6 +145,7 @@ for screen_name in newly_deactivated:
     del existing_users[screen_name]
     disabled_users[screen_name] = user
 
+
 ################################
 # Cache some statistics
 
@@ -135,7 +156,6 @@ for screen_name in existing_users:
 
 ################################
 # Start parsing the tweets
-
 
 tweets = api.GetReplies(last_reply_id)
 
