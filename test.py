@@ -152,12 +152,12 @@ if len(tweets) == 1:
     print str(len(tweets)) + " new tweet"
 else:
     print str(len(tweets)) + " new tweets"
-for tweet in tweets:
+for tweet in reversed(tweets):
     if tweet.user.screen_name in existing_users:
         parseCommands(tweet.user.screen_name, tweet.text)
     else:
         print "I don't know this person: " + tweet.user.screen_name
-    newest_id = max(newest_id, tweet.id)
+    newest_id = tweet.id
 
 for screen_name in updated_users:
     print "Firing off update to "+screen_name
