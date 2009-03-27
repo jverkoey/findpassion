@@ -62,7 +62,8 @@ def addExistingUser(row):
         'id': row[0],
         'screen_name': row[1],
         'available_for_hire': row[2],
-        'active': row[3]}
+        'active': row[3],
+        'is_admin': row[4]}
     if row[3]:
         existing_users[row[1]] = user
     else:
@@ -154,8 +155,10 @@ def parseCommands(screen_name, commands):
 
     if init == 'available':
         updated_user['available_for_hire'] = True
+
     elif init == 'unavailable':    
         updated_user['available_for_hire'] = False
+
     elif init == 'how' and len(commands) > 1:
         if commands[1].startswith('many'):
             if available_users == 1:
@@ -168,6 +171,63 @@ def parseCommands(screen_name, commands):
                 notifyUser(screen_name, "We currently know "+str(available_users)+" "+people+" who "+areis+" looking for work.")
             else:
                 notifyUser(screen_name, "We don't know anyone who's looking for work right now. Are you? Tweet \"@findpassion available\" to let us know.")
+
+    elif init == 'accept' and user['is_admin'] and len(commands) > 1:
+        if (commands[1].startswith('job') or commands[1].startswith('occupation')) and len(commands) > 2:
+            occupation = ' '.join(commands[2:])
+            cursor.execute("SELECT id, legit FROM occupations WHERE name=%s", (occupation))
+            occupation_data = cursor.fetchone()
+
+            if occupation_data == None:
+                #cursor.execute("INSERT INTO occupations(name, suggested_by, legit) VALUES(%s, %s, 1)", (occupation, user['id']))
+                notifyUser(screen_name, "That job doesn't exist.")
+            else:
+                if occupation_data[1]: # Legit?
+                    notifyUser(screen_name, "The job's already legit.")
+                else:
+                    occupation_id = occupation_data[0]
+                    cursor.execute("UPDATE occupations SET legit=1 WHERE id=%s", (occupation_id))
+                    cursor.execute("SELECT screen_name FROM votes LEFT JOIN followers on follower = id WHERE occupation = %s", (occupation_id))
+                    rows = cursor.fetchall()
+                    if len(rows) > 0:
+                        for row in rows:
+                            if not row[0] == screen_name:
+                                notifyUser(row[0], "The job title \""+occupation+"\" is now legit!")
+                    notifyUser(screen_name, "The job is now legit.")
+
+    elif init == 'suggest' and len(commands) > 1:
+        if (commands[1].startswith('job') or commands[1].startswith('occupation')) and len(commands) > 2:
+            occupation = ' '.join(commands[2:])
+            print "Suggesting job: "+occupation
+            cursor.execute("SELECT id, legit FROM occupations WHERE name=%s", (occupation))
+            occupation_data = cursor.fetchone()
+            occupation_id = None
+            new_job = False
+
+            if occupation_data == None:
+                # This occupation doesn't exist; create it.
+                cursor.execute("INSERT INTO occupations(name, suggested_by) VALUES(%s, %s)", (occupation, user['id']))
+                occupation_id = conn.insert_id()
+                notifyUser(screen_name, "Thanks for suggesting a new job! If it's accepted into the list we'll tweet you back.")
+                new_job = True
+            else:
+                occupation_id = occupation_data[0]
+                if occupation_data[1]: # Legit?
+                    print row[1]
+                    notifyUser(screen_name, "That job's already legit.")
+                    return
+
+            # At this point we know the job's either new or not legit
+            # Check if they've already voted.
+            cursor.execute("SELECT follower FROM votes WHERE follower=%s AND occupation=%s", (user['id'], occupation_id))
+            vote_exists = cursor.fetchone()
+            if vote_exists:
+                notifyUser(screen_name, "You've already suggested this job.")
+            else:
+                cursor.execute("UPDATE occupations SET score=score+1 WHERE id=%s", (occupation_id))
+                cursor.execute("INSERT INTO votes(follower, occupation) VALUES(%s, %s)", (user['id'], occupation_id))
+                if not new_job:
+                    notifyUser(screen_name, "We've jotted down your interest in this occupation, we'll tweet you if it goes live.")
 
     needs_update = False
     keys_to_update = []
