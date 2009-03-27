@@ -89,6 +89,7 @@ if len(new_users) > 0:
             cursor.execute("INSERT INTO followers(screen_name) VALUES(%s)", (screen_name))
             cursor.execute("SELECT * FROM followers WHERE id=%s", (conn.insert_id()))
             addExistingUser(cursor.fetchone())
+            notifyUser(screen_name, "Thanks for following, now you can access all the findpassion features!")
 
 newly_deactivated = {}
 for screen_name in existing_users:
