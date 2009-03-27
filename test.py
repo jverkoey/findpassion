@@ -16,9 +16,9 @@ except MySQLdb.Error, e:
     sys.exit (1)
 
 cursor = conn.cursor()
-cursor.execute("SELECT VERSION()")
-row = cursor.fetchone()
-print "server version:", row[0]
+#cursor.execute("SELECT VERSION()")
+#row = cursor.fetchone()
+#print "server version:", row[0]
 
 cursor.execute("SELECT value FROM config WHERE name=%s", ('last_reply_id'))
 row = cursor.fetchone()
@@ -101,11 +101,6 @@ for screen_name in newly_deactivated:
     user = existing_users[screen_name]
     del existing_users[screen_name]
     disabled_users[screen_name] = user
-
-print "enabled:  " + str(existing_users)
-print "disabled: " + str(disabled_users)
-
-print
 
 tweets = api.GetReplies(last_reply_id)
 
