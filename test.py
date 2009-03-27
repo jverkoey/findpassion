@@ -58,7 +58,7 @@ else:
         addExistingUser(row)
 
 api = twitter.Api(username='findpassion', password='F1nd_P4sS10n123!')
-api.SetCache(None)
+#api.SetCache(None)
 #   F1nd_P4sS10n864!
 followers = api.GetFollowers()
 
