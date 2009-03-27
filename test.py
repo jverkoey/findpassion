@@ -109,7 +109,7 @@ if len(new_users) > 0:
             cursor.execute("INSERT INTO followers(screen_name) VALUES(%s)", (screen_name))
             cursor.execute("SELECT * FROM followers WHERE id=%s", (conn.insert_id()))
             addExistingUser(cursor.fetchone())
-            notifyUser(screen_name, "Thanks for following, now you can access all the findpassion features!")
+            notifyUser(screen_name, "Thanks for following, you can now access all of the findpassion features!")
 
 newly_deactivated = {}
 for screen_name in existing_users:
@@ -156,7 +156,7 @@ def parseCommands(screen_name, commands):
     if init == 'available':
         updated_user['available_for_hire'] = True
 
-    elif init == 'unavailable':    
+    elif init == 'unavailable':
         updated_user['available_for_hire'] = False
 
     elif init == 'how' and len(commands) > 1:
@@ -228,6 +228,35 @@ def parseCommands(screen_name, commands):
                 cursor.execute("INSERT INTO votes(follower, occupation) VALUES(%s, %s)", (user['id'], occupation_id))
                 if not new_job:
                     notifyUser(screen_name, "We've jotted down your interest in this occupation, we'll tweet you if it goes live.")
+
+    elif init == 'add' and len(commands) > 1:
+        if (commands[1].startswith('job') or commands[1].startswith('occupation')) and len(commands) > 2:
+            occupation = ' '.join(commands[2:])
+            print "Adding job: "+occupation
+            cursor.execute("SELECT id, legit FROM occupations WHERE name=%s", (occupation))
+            occupation_data = cursor.fetchone()
+            occupation_id = None
+
+            if occupation_data == None:
+                # This occupation doesn't exist; can't do anything.
+                notifyUser(screen_name, "Bummer, this job doesn't exist yet. Suggest it by tweeting @findpassion suggest job "+occupation+".")
+                return
+            else:
+                occupation_id = occupation_data[0]
+                if not occupation_data[1]: # Legit?
+                    notifyUser(screen_name, "This job isn't legit. Suggest it be legit by tweeting @findpassion suggest job "+occupation+".")
+                    return
+
+            # At this point we know the job exists and is legit.
+            # Check if they've already added this job.
+            cursor.execute("SELECT follower FROM follower_jobs WHERE follower=%s AND occupation=%s", (user['id'], occupation_id))
+            link_exists = cursor.fetchone()
+            if link_exists:
+                notifyUser(screen_name, "You already have this job listed.")
+            else:
+                cursor.execute("INSERT INTO follower_jobs(follower, occupation) VALUES(%s, %s)", (user['id'], occupation_id))
+                notifyUser(screen_name, "We've jotted down this new job in your profile.")
+
 
     needs_update = False
     keys_to_update = []
