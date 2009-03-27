@@ -54,6 +54,7 @@ new_users = {}
 
 def notifyUser(screen_name, message):
     #print "---Ignoring request..."
+    print "@"+screen_name+" "+message
     api.PostUpdate("@"+screen_name+" "+message)
 
 def addExistingUser(row):
@@ -61,7 +62,7 @@ def addExistingUser(row):
         'id': row[0],
         'screen_name': row[1],
         'available_for_hire': row[2],
-        'job_title': row[4]}
+        'active': row[3]}
     if row[3]:
         existing_users[row[1]] = user
     else:
@@ -123,6 +124,18 @@ for screen_name in newly_deactivated:
     del existing_users[screen_name]
     disabled_users[screen_name] = user
 
+################################
+# Cache some statistics
+
+available_users = 0
+for screen_name in existing_users:
+    available_users += existing_users[screen_name]['available_for_hire']
+
+
+################################
+# Start parsing the tweets
+
+
 tweets = api.GetReplies(last_reply_id)
 
 if last_reply_id is None:
@@ -136,51 +149,25 @@ def parseCommands(screen_name, commands):
     user = existing_users[screen_name]
     updated_user = user.copy()
     commands = commands.partition(' ')[2].strip().lower().split(' ')
-    States = Enum(['nothing', 'iamprep', 'iam', 'i'])
-    state = StateMachine(States.nothing)
 
-    def stateOccupation(state):
-        print screen_name + " is a " + state.accum
-        updated_user['job_title'] = state.accum
+    init = commands[0]
 
-    for command in commands:
-        #print "  " + command
-
-        if command == 'available':
-            updated_user['available_for_hire'] = not state.negation
-            state.reset()
-
-        elif command == 'unavailable':
-            updated_user['available_for_hire'] = state.negation
-            state.reset()
-
-        elif command == 'not':
-            state.negation = not state.negation
-
-        elif state.state == States.nothing and command.replace("'", '') == 'im':
-            state.state = States.iamprep
-
-        elif state.state == States.nothing and command == 'i':
-            state.state = States.i
-
-        elif state.state == States.i and command == 'am':
-            state.state = States.iamprep
-
-        elif state.state == States.iamprep and state.accum == '' and command in ['an', 'a', 'the']:
-            state.state = States.iam
-
-        elif state.state == States.iam:
-            if state.accum == '':
-                state.accum = command
+    if init == 'available':
+        updated_user['available_for_hire'] = True
+    elif init == 'unavailable':    
+        updated_user['available_for_hire'] = False
+    elif init == 'how' and len(commands) > 1:
+        if commands[1].startswith('many'):
+            if available_users == 1:
+                people = 'person'
+                areis = 'is'
             else:
-                state.accum += " " + command
-            if command.endswith('.'):
-                state.accum.rstrip('.')
-                stateOccupation(state)
-                state.reset()
-
-    if state.state == States.iam:
-        stateOccupation(state)
+                people = 'people'
+                areis = 'are'
+            if available_users > 0:
+                notifyUser(screen_name, "We currently know "+str(available_users)+" "+people+" who "+areis+" looking for work.")
+            else:
+                notifyUser(screen_name, "We don't know anyone who's looking for work right now. Are you? Tweet \"@findpassion available\" to let us know.")
 
     needs_update = False
     keys_to_update = []
