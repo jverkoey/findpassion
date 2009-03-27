@@ -150,7 +150,7 @@ def parseCommands(screen_name, commands):
 
 if len(tweets) == 1:
     print str(len(tweets)) + " new tweet"
-else:
+else if len(tweets) > 1:
     print str(len(tweets)) + " new tweets"
 for tweet in reversed(tweets):
     if tweet.user.screen_name in existing_users:
