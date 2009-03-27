@@ -7,6 +7,23 @@ import MySQLdb
 import sys
 import settings
 
+class Enum(object):
+    def __init__(self, names):
+        for number, name in enumerate(names):
+            setattr(self, name, number)
+
+
+class StateMachine(object):
+    def __init__(self, initial_state):
+        self.start_state = initial_state
+        self.reset()
+
+    def reset(self):    
+        self.state = self.start_state
+        self.accum = ''
+        self.negation = False
+        
+
 try:
     conn = MySQLdb.connect (host = "localhost",
                             user = "findpassion",
@@ -43,7 +60,8 @@ def addExistingUser(row):
     user = {
         'id': row[0],
         'screen_name': row[1],
-        'available_for_hire': row[2]}
+        'available_for_hire': row[2],
+        'job_title': row[4]}
     if row[3]:
         existing_users[row[1]] = user
     else:
@@ -118,18 +136,51 @@ def parseCommands(screen_name, commands):
     user = existing_users[screen_name]
     updated_user = user.copy()
     commands = commands.partition(' ')[2].strip().lower().split(' ')
-    print screen_name + ":"
-    negation = False
+    States = Enum(['nothing', 'iamprep', 'iam', 'i'])
+    state = StateMachine(States.nothing)
+
+    def stateOccupation(state):
+        print screen_name + " is a " + state.accum
+        updated_user['job_title'] = state.accum
+
     for command in commands:
-        print "  " + command
+        #print "  " + command
+
         if command == 'available':
-            updated_user['available_for_hire'] = not negation
-            negation = False
+            updated_user['available_for_hire'] = not state.negation
+            state.reset()
+
         elif command == 'unavailable':
-            updated_user['available_for_hire'] = negation
-            negation = False
+            updated_user['available_for_hire'] = state.negation
+            state.reset()
+
         elif command == 'not':
-            negation = not negation
+            state.negation = not state.negation
+
+        elif state.state == States.nothing and command.replace("'", '') == 'im':
+            state.state = States.iamprep
+
+        elif state.state == States.nothing and command == 'i':
+            state.state = States.i
+
+        elif state.state == States.i and command == 'am':
+            state.state = States.iamprep
+
+        elif state.state == States.iamprep and state.accum == '' and command in ['an', 'a', 'the']:
+            state.state = States.iam
+
+        elif state.state == States.iam:
+            if state.accum == '':
+                state.accum = command
+            else:
+                state.accum += " " + command
+            if command.endswith('.'):
+                state.accum.rstrip('.')
+                stateOccupation(state)
+                state.reset()
+
+    if state.state == States.iam:
+        stateOccupation(state)
 
     needs_update = False
     keys_to_update = []
@@ -157,6 +208,7 @@ elif len(tweets) > 1:
     print str(len(tweets)) + " new tweets"
 for tweet in reversed(tweets):
     if tweet.user.screen_name in existing_users:
+        print tweet.user.screen_name+": " + tweet.text
         parseCommands(tweet.user.screen_name, tweet.text)
     else:
         print "I don't know this person: " + tweet.user.screen_name
