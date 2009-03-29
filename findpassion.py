@@ -238,6 +238,7 @@ class Bot(twitterbot.StandardBot):
             for key in keys_to_update:
                 sql += key+"=%s "
             sql += "WHERE id=%s"
+            print sql
             values_to_update.append(user['id'])
             self.cursor.execute(sql, values_to_update)
             self.existing_users[screen_name] = updated_user

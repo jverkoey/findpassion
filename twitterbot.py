@@ -163,9 +163,6 @@ class StandardBot(object):
             print "Updating last_reply_id..."
             self.cursor.execute("UPDATE config SET value=%s WHERE name=%s", (self.newest_id, 'last_reply_id'))
 
-        self.cursor.close()
-        self.conn.close()
-
 
     def addExistingUser(self, user, screen_name, enabled):
         if enabled:
