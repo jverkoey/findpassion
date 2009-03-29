@@ -77,7 +77,7 @@ class Bot(twitterbot.StandardBot):
         elif user['is_admin'] and init == 'accept' and len(commands) > 1:
             if commands[1].startswith('class') and len(commands) > 2:
                 for class_name in ' '.join(commands[2:]).split(','):
-                    class_name = ' '.join(commands[2:])
+                    class_name = class_name.strip()
                     self.cursor.execute("SELECT id, legit FROM classes WHERE name=%s", (class_name))
                     class_data = self.cursor.fetchone()
 
@@ -157,7 +157,7 @@ class Bot(twitterbot.StandardBot):
                     self.notifyUser(screen_name, "You already have this class listed.")
                 else:
                     self.cursor.execute("INSERT INTO follower_classes(follower, class) VALUES(%s, %s)", (user['id'], class_id))
-                    self.notifyUser(screen_name, "We've jotted down this new class in your profile.")
+                    self.notifyUser(screen_name, "We've jotted this new class down in your profile.")
 
         elif init == 'remove' and len(commands) > 1:
             if commands[1].startswith('class') and len(commands) > 2:
