@@ -27,6 +27,7 @@ class Bot(twitterbot.StandardBot):
 
     def execute(self):
         tweets = self.getTweets()
+        self.commitTweets()
 
         self.updated_users = {}
 
@@ -44,8 +45,6 @@ class Bot(twitterbot.StandardBot):
         for screen_name in self.updated_users:
             print "Firing off update to "+screen_name
             self.notifyUser(screen_name, "Cheers! Your account's been updated")
-
-        self.commitTweets()
 
 
     def parseCommands(self, screen_name, commands):
