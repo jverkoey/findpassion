@@ -52,7 +52,7 @@ new_users = {}
 def notifyUser(screen_name, message):
     #print "---Ignoring request..."
     print "@"+screen_name+" "+message
-    api.PostUpdate("@"+screen_name+" "+message)
+    #api.PostUpdate("@"+screen_name+" "+message)
 
 def addExistingUser(row):
     user = {
@@ -166,6 +166,7 @@ newest_id = last_reply_id
 
 updated_users = {}
 
+
 def parseCommands(screen_name, commands):
     user = existing_users[screen_name]
     updated_user = user.copy()
@@ -192,90 +193,115 @@ def parseCommands(screen_name, commands):
             else:
                 notifyUser(screen_name, "We don't know anyone who's looking for work right now. Are you? Tweet \"@findpassion available\" to let us know.")
 
-    elif init == 'accept' and user['is_admin'] and len(commands) > 1:
-        if (commands[1].startswith('job') or commands[1].startswith('occupation')) and len(commands) > 2:
-            occupation = ' '.join(commands[2:])
-            cursor.execute("SELECT id, legit FROM occupations WHERE name=%s", (occupation))
-            occupation_data = cursor.fetchone()
+    # TODO: Move these commands into an inner conditional statement.
+    elif user['is_admin'] and init == 'accept' and len(commands) > 1:
+        if commands[1].startswith('class') and len(commands) > 2:
+            class_name = ' '.join(commands[2:])
+            cursor.execute("SELECT id, legit FROM classes WHERE name=%s", (class_name))
+            class_data = cursor.fetchone()
 
-            if occupation_data == None:
-                #cursor.execute("INSERT INTO occupations(name, suggested_by, legit) VALUES(%s, %s, 1)", (occupation, user['id']))
-                notifyUser(screen_name, "That job doesn't exist.")
+            if class_data == None:
+                cursor.execute("INSERT INTO classes(name, suggested_by, legit) VALUES(%s, %s, 1)", (class_name, user['id']))
+                notifyUser(screen_name, "That class doesn't exist, but it's now added.")
             else:
-                if occupation_data[1]: # Legit?
-                    notifyUser(screen_name, "The job's already legit.")
+                if class_data[1]: # Legit?
+                    notifyUser(screen_name, "The class's already legit.")
                 else:
-                    occupation_id = occupation_data[0]
-                    cursor.execute("UPDATE occupations SET legit=1 WHERE id=%s", (occupation_id))
-                    cursor.execute("SELECT screen_name FROM votes LEFT JOIN followers on follower = id WHERE occupation = %s", (occupation_id))
+                    class_id = class_data[0]
+                    cursor.execute("UPDATE classes SET legit=1 WHERE id=%s", (class_id))
+                    cursor.execute("SELECT screen_name FROM votes LEFT JOIN followers on follower = id WHERE class = %s", (class_id))
                     rows = cursor.fetchall()
                     if len(rows) > 0:
                         for row in rows:
                             if not row[0] == screen_name:
-                                notifyUser(row[0], "The job title \""+occupation+"\" is now legit!")
-                    notifyUser(screen_name, "The job is now legit.")
+                                notifyUser(row[0], "\""+class_name+"\" is now legit!")
+                    notifyUser(screen_name, "The class is now legit.")
 
     elif init == 'suggest' and len(commands) > 1:
-        if (commands[1].startswith('job') or commands[1].startswith('occupation')) and len(commands) > 2:
-            occupation = ' '.join(commands[2:])
-            print "Suggesting job: "+occupation
-            cursor.execute("SELECT id, legit FROM occupations WHERE name=%s", (occupation))
-            occupation_data = cursor.fetchone()
-            occupation_id = None
-            new_job = False
+        if commands[1].startswith('class') and len(commands) > 2:
+            class_name = ' '.join(commands[2:])
+            print "Suggesting class: "+class_name
+            cursor.execute("SELECT id, legit FROM classes WHERE name=%s", (class_name))
+            class_data = cursor.fetchone()
+            class_id = None
+            new_class = False
 
-            if occupation_data == None:
-                # This occupation doesn't exist; create it.
-                cursor.execute("INSERT INTO occupations(name, suggested_by) VALUES(%s, %s)", (occupation, user['id']))
-                occupation_id = conn.insert_id()
-                notifyUser(screen_name, "Thanks for suggesting a new job! If it's accepted into the list we'll tweet you back.")
-                new_job = True
+            if class_data == None:
+                # This class doesn't exist; create it.
+                cursor.execute("INSERT INTO classes(name, suggested_by) VALUES(%s, %s)", (class_name, user['id']))
+                class_id = conn.insert_id()
+                notifyUser(screen_name, "Thanks for suggesting a new class! If it's accepted into the list we'll tweet you back.")
+                new_class = True
             else:
-                occupation_id = occupation_data[0]
-                if occupation_data[1]: # Legit?
-                    print row[1]
-                    notifyUser(screen_name, "That job's already legit.")
+                class_id = class_data[0]
+                if class_data[1]: # Legit?
+                    notifyUser(screen_name, "That class's already legit.")
                     return
 
-            # At this point we know the job's either new or not legit
+            # At this point we know the class's either new or not legit
             # Check if they've already voted.
-            cursor.execute("SELECT follower FROM votes WHERE follower=%s AND occupation=%s", (user['id'], occupation_id))
+            cursor.execute("SELECT follower FROM votes WHERE follower=%s AND class=%s", (user['id'], class_id))
             vote_exists = cursor.fetchone()
             if vote_exists:
-                notifyUser(screen_name, "You've already suggested this job.")
+                notifyUser(screen_name, "You've already suggested this class.")
             else:
-                cursor.execute("UPDATE occupations SET score=score+1 WHERE id=%s", (occupation_id))
-                cursor.execute("INSERT INTO votes(follower, occupation) VALUES(%s, %s)", (user['id'], occupation_id))
-                if not new_job:
-                    notifyUser(screen_name, "We've jotted down your interest in this occupation, we'll tweet you if it goes live.")
+                cursor.execute("UPDATE classes SET score=score+1 WHERE id=%s", (class_id))
+                cursor.execute("INSERT INTO votes(follower, class) VALUES(%s, %s)", (user['id'], class_id))
+                if not new_class:
+                    notifyUser(screen_name, "We've jotted down your interest in this class, we'll tweet you if it goes live.")
 
     elif init == 'add' and len(commands) > 1:
-        if (commands[1].startswith('job') or commands[1].startswith('occupation')) and len(commands) > 2:
-            occupation = ' '.join(commands[2:])
-            print "Adding job: "+occupation
-            cursor.execute("SELECT id, legit FROM occupations WHERE name=%s", (occupation))
-            occupation_data = cursor.fetchone()
-            occupation_id = None
+        if commands[1].startswith('class') and len(commands) > 2:
+            class_name = ' '.join(commands[2:])
+            print "Adding class: "+class_name
+            cursor.execute("SELECT id, legit FROM classes WHERE name=%s", (class_name))
+            class_data = cursor.fetchone()
+            class_id = None
 
-            if occupation_data == None:
-                # This occupation doesn't exist; can't do anything.
-                notifyUser(screen_name, "Bummer, this job doesn't exist yet. Suggest it by tweeting @findpassion suggest job "+occupation+".")
+            if class_data == None:
+                # This class doesn't exist; can't do anything.
+                notifyUser(screen_name, "Bummer, this class doesn't exist yet. Suggest it by tweeting @findpassion suggest class "+class_name+".")
                 return
             else:
-                occupation_id = occupation_data[0]
-                if not occupation_data[1]: # Legit?
-                    notifyUser(screen_name, "This job isn't legit. Suggest it be legit by tweeting @findpassion suggest job "+occupation+".")
+                class_id = class_data[0]
+                if not class_data[1]: # Legit?
+                    notifyUser(screen_name, "This class isn't legit. Suggest it be legit by tweeting @findpassion suggest class "+class_name+".")
                     return
 
-            # At this point we know the job exists and is legit.
-            # Check if they've already added this job.
-            cursor.execute("SELECT follower FROM follower_jobs WHERE follower=%s AND occupation=%s", (user['id'], occupation_id))
+            # At this point we know the class exists and is legit.
+            # Check if they've already added this class.
+            cursor.execute("SELECT follower FROM follower_classes WHERE follower=%s AND class=%s", (user['id'], class_id))
             link_exists = cursor.fetchone()
             if link_exists:
-                notifyUser(screen_name, "You already have this job listed.")
+                notifyUser(screen_name, "You already have this class listed.")
             else:
-                cursor.execute("INSERT INTO follower_jobs(follower, occupation) VALUES(%s, %s)", (user['id'], occupation_id))
-                notifyUser(screen_name, "We've jotted down this new job in your profile.")
+                cursor.execute("INSERT INTO follower_classes(follower, class) VALUES(%s, %s)", (user['id'], class_id))
+                notifyUser(screen_name, "We've jotted down this new class in your profile.")
+
+    elif init == 'remove' and len(commands) > 1:
+        if commands[1].startswith('class') and len(commands) > 2:
+            class_name = ' '.join(commands[2:])
+            print "Removing class: "+class_name
+            cursor.execute("SELECT id, legit FROM classes WHERE name=%s", (class_name))
+            class_data = cursor.fetchone()
+            class_id = None
+
+            if class_data == None:
+                # This class doesn't exist; can't do anything.
+                notifyUser(screen_name, "This class doesn't exist.")
+                return
+            else:
+                class_id = class_data[0]
+
+            # At this point we know the class exists.
+            # Check if they've already added this class.
+            cursor.execute("SELECT follower FROM follower_classes WHERE follower=%s AND class=%s", (user['id'], class_id))
+            link_exists = cursor.fetchone()
+            if link_exists:
+                cursor.execute("DELETE FROM follower_classes WHERE follower=%s AND class=%s", (user['id'], class_id))
+                notifyUser(screen_name, "We removed the class.")
+            else:
+                notifyUser(screen_name, "You don't have this class listed.")
 
 
     needs_update = False
