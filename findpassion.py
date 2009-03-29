@@ -112,7 +112,7 @@ class Bot(twitterbot.StandardBot):
                     if class_data == None:
                         # This class doesn't exist; create it.
                         self.cursor.execute("INSERT INTO classes(name, suggested_by) VALUES(%s, %s)", (class_name, user['id']))
-                        class_id = conn.insert_id()
+                        class_id = self.conn.insert_id()
                         self.notifyUser(screen_name, "Thanks for suggesting a new class! If it's accepted into the list we'll tweet you back")
                         new_class = True
                     else:
@@ -184,7 +184,7 @@ class Bot(twitterbot.StandardBot):
                     link_exists = self.cursor.fetchone()
                     if link_exists:
                         self.cursor.execute("DELETE FROM follower_classes WHERE follower=%s AND class=%s", (user['id'], class_id))
-                        self.notifyUser(screen_name, "We removed "+class_name)
+                        self.notifyUser(screen_name, "We removed "+class_name+" from your profile")
                     else:
                         self.notifyUser(screen_name, "You don't have "+class_name+" listed")
 
