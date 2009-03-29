@@ -110,7 +110,7 @@ class StandardBot(object):
                 else:
                     print "Adding " + screen_name
                     self.cursor.execute("INSERT INTO followers(screen_name) VALUES(%s)", (screen_name))
-                    self.cursor.execute("SELECT * FROM followers WHERE id=%s", (conn.insert_id()))
+                    self.cursor.execute("SELECT * FROM followers WHERE id=%s", (self.conn.insert_id()))
 
                     row = self.cursor.fetchone()
                     user = self.dbToUser(row)
