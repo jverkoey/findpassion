@@ -77,6 +77,7 @@ class Bot(twitterbot.StandardBot):
         elif user['is_admin'] and init == 'accept' and len(commands) > 1:
             if commands[1].startswith('class') and len(commands) > 2:
                 for class_name in ' '.join(commands[2:]).split(','):
+                    print "Accepting class: "+class_name
                     class_name = class_name.strip()
                     self.cursor.execute("SELECT id, legit FROM classes WHERE name=%s", (class_name))
                     class_data = self.cursor.fetchone()
@@ -100,89 +101,93 @@ class Bot(twitterbot.StandardBot):
 
         elif init == 'suggest' and len(commands) > 1:
             if commands[1].startswith('class') and len(commands) > 2:
-                class_name = ' '.join(commands[2:])
-                print "Suggesting class: "+class_name
-                self.cursor.execute("SELECT id, legit FROM classes WHERE name=%s", (class_name))
-                class_data = self.cursor.fetchone()
-                class_id = None
-                new_class = False
+                for class_name in ' '.join(commands[2:]).split(','):
+                    class_name = class_name.strip()
+                    print "Suggesting class: "+class_name
+                    self.cursor.execute("SELECT id, legit FROM classes WHERE name=%s", (class_name))
+                    class_data = self.cursor.fetchone()
+                    class_id = None
+                    new_class = False
 
-                if class_data == None:
-                    # This class doesn't exist; create it.
-                    self.cursor.execute("INSERT INTO classes(name, suggested_by) VALUES(%s, %s)", (class_name, user['id']))
-                    class_id = conn.insert_id()
-                    self.notifyUser(screen_name, "Thanks for suggesting a new class! If it's accepted into the list we'll tweet you back.")
-                    new_class = True
-                else:
-                    class_id = class_data[0]
-                    if class_data[1]: # Legit?
-                        self.notifyUser(screen_name, "That class's already legit.")
-                        return
+                    if class_data == None:
+                        # This class doesn't exist; create it.
+                        self.cursor.execute("INSERT INTO classes(name, suggested_by) VALUES(%s, %s)", (class_name, user['id']))
+                        class_id = conn.insert_id()
+                        self.notifyUser(screen_name, "Thanks for suggesting a new class! If it's accepted into the list we'll tweet you back.")
+                        new_class = True
+                    else:
+                        class_id = class_data[0]
+                        if class_data[1]: # Legit?
+                            self.notifyUser(screen_name, "That class's already legit.")
+                            return
 
-                # At this point we know the class's either new or not legit
-                # Check if they've already voted.
-                self.cursor.execute("SELECT follower FROM votes WHERE follower=%s AND class=%s", (user['id'], class_id))
-                vote_exists = self.cursor.fetchone()
-                if vote_exists:
-                    self.notifyUser(screen_name, "You've already suggested this class.")
-                else:
-                    self.cursor.execute("UPDATE classes SET score=score+1 WHERE id=%s", (class_id))
-                    self.cursor.execute("INSERT INTO votes(follower, class) VALUES(%s, %s)", (user['id'], class_id))
-                    if not new_class:
-                        self.notifyUser(screen_name, "We've jotted down your interest in this class, we'll tweet you if it goes live.")
+                    # At this point we know the class's either new or not legit
+                    # Check if they've already voted.
+                    self.cursor.execute("SELECT follower FROM votes WHERE follower=%s AND class=%s", (user['id'], class_id))
+                    vote_exists = self.cursor.fetchone()
+                    if vote_exists:
+                        self.notifyUser(screen_name, "You've already suggested this class.")
+                    else:
+                        self.cursor.execute("UPDATE classes SET score=score+1 WHERE id=%s", (class_id))
+                        self.cursor.execute("INSERT INTO votes(follower, class) VALUES(%s, %s)", (user['id'], class_id))
+                        if not new_class:
+                            self.notifyUser(screen_name, "We've jotted down your interest in this class, we'll tweet you if it goes live.")
 
         elif init == 'add' and len(commands) > 1:
             if commands[1].startswith('class') and len(commands) > 2:
-                class_name = ' '.join(commands[2:])
-                print "Adding class: "+class_name
-                self.cursor.execute("SELECT id, legit FROM classes WHERE name=%s", (class_name))
-                class_data = self.cursor.fetchone()
-                class_id = None
+                for class_name in ' '.join(commands[2:]).split(','):
+                    class_name = class_name.strip()
+                    print "Adding class: "+class_name
+                    self.cursor.execute("SELECT id, legit FROM classes WHERE name=%s", (class_name))
+                    class_data = self.cursor.fetchone()
+                    class_id = None
 
-                if class_data == None:
-                    # This class doesn't exist; can't do anything.
-                    self.notifyUser(screen_name, "Bummer, this class doesn't exist yet. Suggest it by tweeting @findpassion suggest class "+class_name+".")
-                    return
-                else:
-                    class_id = class_data[0]
-                    if not class_data[1]: # Legit?
-                        self.notifyUser(screen_name, "This class isn't legit. Suggest it be legit by tweeting @findpassion suggest class "+class_name+".")
+                    if class_data == None:
+                        # This class doesn't exist; can't do anything.
+                        self.notifyUser(screen_name, "Bummer, this class doesn't exist yet. Suggest it by tweeting @findpassion suggest class "+class_name+".")
                         return
+                    else:
+                        class_id = class_data[0]
+                        if not class_data[1]: # Legit?
+                            self.notifyUser(screen_name, "This class isn't legit. Suggest it be legit by tweeting @findpassion suggest class "+class_name+".")
+                            return
 
-                # At this point we know the class exists and is legit.
-                # Check if they've already added this class.
-                self.cursor.execute("SELECT follower FROM follower_classes WHERE follower=%s AND class=%s", (user['id'], class_id))
-                link_exists = self.cursor.fetchone()
-                if link_exists:
-                    self.notifyUser(screen_name, "You already have this class listed.")
-                else:
-                    self.cursor.execute("INSERT INTO follower_classes(follower, class) VALUES(%s, %s)", (user['id'], class_id))
-                    self.notifyUser(screen_name, "We've jotted this new class down in your profile.")
+                    # At this point we know the class exists and is legit.
+                    # Check if they've already added this class.
+                    self.cursor.execute("SELECT follower FROM follower_classes WHERE follower=%s AND class=%s", (user['id'], class_id))
+                    link_exists = self.cursor.fetchone()
+                    if link_exists:
+                        self.notifyUser(screen_name, "You already have this class listed.")
+                    else:
+                        self.cursor.execute("INSERT INTO follower_classes(follower, class) VALUES(%s, %s)", (user['id'], class_id))
+                        self.notifyUser(screen_name, "We've jotted this new class down in your profile.")
 
         elif init == 'remove' and len(commands) > 1:
             if commands[1].startswith('class') and len(commands) > 2:
-                class_name = ' '.join(commands[2:])
-                print "Removing class: "+class_name
-                self.cursor.execute("SELECT id, legit FROM classes WHERE name=%s", (class_name))
-                class_data = self.cursor.fetchone()
-                class_id = None
+                for class_name in ' '.join(commands[2:]).split(','):
+                    class_name = class_name.strip()
+                    class_name = ' '.join(commands[2:])
+                    print "Removing class: "+class_name
+                    self.cursor.execute("SELECT id, legit FROM classes WHERE name=%s", (class_name))
+                    class_data = self.cursor.fetchone()
+                    class_id = None
 
-                if class_data == None:
-                    # This class doesn't exist; can't do anything.
-                    self.notifyUser(screen_name, "This class doesn't exist.")
-                    return
-                else:
-                    class_id = class_data[0]
+                    if class_data == None:
+                        # This class doesn't exist; can't do anything.
+                        self.notifyUser(screen_name, "This class doesn't exist.")
+                        return
+                    else:
+                        class_id = class_data[0]
 
-                # At this point we know the class exists.
-                # Check if they've already added this class.
-                self.cursor.execute("SELECT follower FROM follower_classes WHERE follower=%s AND class=%s", (user['id'], class_id))
-                link_exists = self.cursor.fetchone()
-                if link_exists:
-                    self.cursor.execute("DELETE FROM follower_classes WHERE follower=%s AND class=%s", (user['id'], class_id))
-                    self.notifyUser(screen_name, "We removed the class.")
-                else:
-                    self.notifyUser(screen_name, "You don't have this class listed.")
+                    # At this point we know the class exists.
+                    # Check if they've already added this class.
+                    self.cursor.execute("SELECT follower FROM follower_classes WHERE follower=%s AND class=%s", (user['id'], class_id))
+                    link_exists = self.cursor.fetchone()
+                    if link_exists:
+                        self.cursor.execute("DELETE FROM follower_classes WHERE follower=%s AND class=%s", (user['id'], class_id))
+                        self.notifyUser(screen_name, "We removed the class.")
+                    else:
+                        self.notifyUser(screen_name, "You don't have this class listed.")
 
 
         needs_update = False
