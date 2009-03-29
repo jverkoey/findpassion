@@ -76,26 +76,27 @@ class Bot(twitterbot.StandardBot):
         # TODO: Move these commands into an inner conditional statement.
         elif user['is_admin'] and init == 'accept' and len(commands) > 1:
             if commands[1].startswith('class') and len(commands) > 2:
-                class_name = ' '.join(commands[2:])
-                self.cursor.execute("SELECT id, legit FROM classes WHERE name=%s", (class_name))
-                class_data = self.cursor.fetchone()
+                for class_name in ' '.join(commands[2:]).split(','):
+                    class_name = ' '.join(commands[2:])
+                    self.cursor.execute("SELECT id, legit FROM classes WHERE name=%s", (class_name))
+                    class_data = self.cursor.fetchone()
 
-                if class_data == None:
-                    self.cursor.execute("INSERT INTO classes(name, suggested_by, legit) VALUES(%s, %s, 1)", (class_name, user['id']))
-                    self.notifyUser(screen_name, "That class doesn't exist, but it's now added.")
-                else:
-                    if class_data[1]: # Legit?
-                        self.notifyUser(screen_name, "The class's already legit.")
+                    if class_data == None:
+                        self.cursor.execute("INSERT INTO classes(name, suggested_by, legit) VALUES(%s, %s, 1)", (class_name, user['id']))
+                        self.notifyUser(screen_name, "That class doesn't exist, but it's now added.")
                     else:
-                        class_id = class_data[0]
-                        self.cursor.execute("UPDATE classes SET legit=1 WHERE id=%s", (class_id))
-                        self.cursor.execute("SELECT screen_name FROM votes LEFT JOIN followers on follower = id WHERE class = %s", (class_id))
-                        rows = self.cursor.fetchall()
-                        if len(rows) > 0:
-                            for row in rows:
-                                if not row[0] == screen_name:
-                                    self.notifyUser(row[0], "\""+class_name+"\" is now legit!")
-                        self.notifyUser(screen_name, "The class is now legit.")
+                        if class_data[1]: # Legit?
+                            self.notifyUser(screen_name, "That class is already legit.")
+                        else:
+                            class_id = class_data[0]
+                            self.cursor.execute("UPDATE classes SET legit=1 WHERE id=%s", (class_id))
+                            self.cursor.execute("SELECT screen_name FROM votes LEFT JOIN followers on follower = id WHERE class = %s", (class_id))
+                            rows = self.cursor.fetchall()
+                            if len(rows) > 0:
+                                for row in rows:
+                                    if not row[0] == screen_name:
+                                        self.notifyUser(row[0], "\""+class_name+"\" is now legit!")
+                            self.notifyUser(screen_name, "The class is now legit.")
 
         elif init == 'suggest' and len(commands) > 1:
             if commands[1].startswith('class') and len(commands) > 2:
@@ -193,6 +194,7 @@ class Bot(twitterbot.StandardBot):
                 needs_update = True
                 keys_to_update.append(key)
                 values_to_update.append(updated_user[key])
+
         if needs_update:
             print "Updating " + screen_name + "'s account..."
             sql = "UPDATE followers SET "

@@ -8,5 +8,3 @@ import sys
 bot = findpassion.Bot()
 
 bot.execute()
-
-sys.exit(0)

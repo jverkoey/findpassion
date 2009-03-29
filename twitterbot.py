@@ -151,8 +151,9 @@ class StandardBot(object):
 
         tweets = self.api.GetReplies(self.last_reply_id)
 
+        self.newest_id = self.last_reply_id
         # Grab the newest id.
-        for tweet in tweets:
+        for tweet in reversed(tweets):
             self.newest_id = tweet.id
         
         return reversed(tweets)
