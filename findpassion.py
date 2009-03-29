@@ -28,7 +28,7 @@ class Bot(twitterbot.StandardBot):
     def execute(self):
         tweets = self.getTweets()
 
-        updated_users = {}
+        self.updated_users = {}
 
         if len(tweets) == 1:
             print str(len(tweets)) + " new tweet"
@@ -41,7 +41,7 @@ class Bot(twitterbot.StandardBot):
             else:
                 print "I don't know this person: " + tweet.user.screen_name
 
-        for screen_name in updated_users:
+        for screen_name in self.updated_users:
             print "Firing off update to "+screen_name
             self.notifyUser(screen_name, "Cheers! Your account's been updated")
 
@@ -242,7 +242,7 @@ class Bot(twitterbot.StandardBot):
             values_to_update.append(user['id'])
             self.cursor.execute(sql, values_to_update)
             self.existing_users[screen_name] = updated_user
-            updated_users[screen_name] = True
+            self.updated_users[screen_name] = True
 
 
     def dbToUser(self, row):
