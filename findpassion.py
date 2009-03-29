@@ -3,6 +3,7 @@
 # Copyright 2009 Jeff Verkoeyen.
 
 import twitterbot
+import random
 
 class Bot(twitterbot.StandardBot):
     '''The findpassion twitter bot.
@@ -73,7 +74,6 @@ class Bot(twitterbot.StandardBot):
                 else:
                     self.notifyUser(screen_name, "We don't know anyone who's looking for work right now. Are you? Tweet \"@findpassion available\" to let us know")
 
-        # TODO: Move these commands into an inner conditional statement.
         elif user['is_admin'] and init == 'accept' and len(commands) > 1:
             if commands[1].startswith('class') and len(commands) > 2:
                 for class_name in ' '.join(commands[2:]).split(','):
@@ -188,6 +188,40 @@ class Bot(twitterbot.StandardBot):
                     else:
                         self.notifyUser(screen_name, "You don't have "+class_name+" listed")
 
+        elif init == 'find' and len(commands) > 1 or len(commands) >= 1:
+            if init == 'find':
+                commands = commands[1:]
+            for class_name in ' '.join(commands).split(','):
+                print "Looking for class: "+class_name
+                class_name = class_name.strip()
+                self.cursor.execute("SELECT id, legit FROM classes WHERE name=%s", (class_name))
+                class_data = self.cursor.fetchone()
+
+                if class_data == None and class_name.endswith('s'):
+                    self.cursor.execute("SELECT id, legit FROM classes WHERE name=%s", (class_name[:-1]))
+                    class_data = self.cursor.fetchone()
+
+                if class_data == None:
+                    self.notifyUser(screen_name, "That class doesn't exist")
+                else:
+                    if class_data[1]: # Legit?
+                        class_id = class_data[0]
+                        self.cursor.execute("SELECT screen_name FROM follower_classes LEFT JOIN followers on follower = id WHERE class = %s AND available_for_hire=1", (class_id))
+                        rows = self.cursor.fetchall()
+                        if len(rows) > 0:
+                            not_callee = []
+                            for row in rows:
+                                if not row[0] == screen_name:
+                                    not_callee.append(row[0])
+                            if len(not_callee) > 0:
+                                random.shuffle(not_callee)
+                                self.notifyUser(screen_name, class_name+": @"+' @'.join(not_callee[:4]))
+                            else:
+                                self.notifyUser(screen_name, "You are currently the only listed person with this class")
+                        else:
+                            self.notifyUser(screen_name, "No available people with the class "+class_name)
+
+
 
         needs_update = False
         keys_to_update = []
@@ -207,7 +241,7 @@ class Bot(twitterbot.StandardBot):
             sql += "WHERE id=%s"
             values_to_update.append(user['id'])
             self.cursor.execute(sql, values_to_update)
-            existing_users[screen_name] = updated_user
+            self.existing_users[screen_name] = updated_user
             updated_users[screen_name] = True
 
 

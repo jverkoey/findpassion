@@ -142,7 +142,7 @@ class StandardBot(object):
 
     def notifyUser(self, screen_name, message):
         print "@"+screen_name+" "+message
-        #self.api.PostUpdate("@"+screen_name+" "+message)
+        self.api.PostUpdate("@"+screen_name+" "+message)
 
 
     def getTweets(self):
