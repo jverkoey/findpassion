@@ -102,7 +102,7 @@ class StandardBot(object):
                 if screen_name in self.disabled_users:
                     print "Reactivating " + screen_name
                     self.cursor.execute("UPDATE followers SET active=1 WHERE screen_name=%s", (screen_name))
-                    self.notifyUser(screen_name, "Welcome back! We've kept your profile safely tucked away.")
+                    self.notifyUser(screen_name, "Welcome back! We've kept your profile safely tucked away")
 
                     user = self.disabled_users[screen_name]
                     del self.disabled_users[screen_name]
@@ -142,7 +142,7 @@ class StandardBot(object):
 
     def notifyUser(self, screen_name, message):
         print "@"+screen_name+" "+message
-        self.api.PostUpdate("@"+screen_name+" "+message)
+        #self.api.PostUpdate("@"+screen_name+" "+message)
 
 
     def getTweets(self):

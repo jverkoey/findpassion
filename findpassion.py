@@ -42,7 +42,7 @@ class Bot(twitterbot.StandardBot):
 
         for screen_name in updated_users:
             print "Firing off update to "+screen_name
-            self.notifyUser(screen_name, "Cheers! Your account's been updated.")
+            self.notifyUser(screen_name, "Cheers! Your account's been updated")
 
         self.commitTweets()
 
@@ -69,9 +69,9 @@ class Bot(twitterbot.StandardBot):
                     people = 'people'
                     areis = 'are'
                 if self.available_users > 0:
-                    self.notifyUser(screen_name, "We currently know "+str(self.available_users)+" "+people+" who "+areis+" looking for work.")
+                    self.notifyUser(screen_name, "We currently know "+str(self.available_users)+" "+people+" who "+areis+" looking for work")
                 else:
-                    self.notifyUser(screen_name, "We don't know anyone who's looking for work right now. Are you? Tweet \"@findpassion available\" to let us know.")
+                    self.notifyUser(screen_name, "We don't know anyone who's looking for work right now. Are you? Tweet \"@findpassion available\" to let us know")
 
         # TODO: Move these commands into an inner conditional statement.
         elif user['is_admin'] and init == 'accept' and len(commands) > 1:
@@ -84,10 +84,10 @@ class Bot(twitterbot.StandardBot):
 
                     if class_data == None:
                         self.cursor.execute("INSERT INTO classes(name, suggested_by, legit) VALUES(%s, %s, 1)", (class_name, user['id']))
-                        self.notifyUser(screen_name, "That class doesn't exist, but it's now added.")
+                        self.notifyUser(screen_name, class_name+" doesn't exist, but it's now added")
                     else:
                         if class_data[1]: # Legit?
-                            self.notifyUser(screen_name, "That class is already legit.")
+                            self.notifyUser(screen_name, class_name+" is already legit")
                         else:
                             class_id = class_data[0]
                             self.cursor.execute("UPDATE classes SET legit=1 WHERE id=%s", (class_id))
@@ -97,7 +97,7 @@ class Bot(twitterbot.StandardBot):
                                 for row in rows:
                                     if not row[0] == screen_name:
                                         self.notifyUser(row[0], "\""+class_name+"\" is now legit!")
-                            self.notifyUser(screen_name, "The class is now legit.")
+                            self.notifyUser(screen_name, class_name+" is now legit")
 
         elif init == 'suggest' and len(commands) > 1:
             if commands[1].startswith('class') and len(commands) > 2:
@@ -113,12 +113,12 @@ class Bot(twitterbot.StandardBot):
                         # This class doesn't exist; create it.
                         self.cursor.execute("INSERT INTO classes(name, suggested_by) VALUES(%s, %s)", (class_name, user['id']))
                         class_id = conn.insert_id()
-                        self.notifyUser(screen_name, "Thanks for suggesting a new class! If it's accepted into the list we'll tweet you back.")
+                        self.notifyUser(screen_name, "Thanks for suggesting a new class! If it's accepted into the list we'll tweet you back")
                         new_class = True
                     else:
                         class_id = class_data[0]
                         if class_data[1]: # Legit?
-                            self.notifyUser(screen_name, "That class's already legit.")
+                            self.notifyUser(screen_name, class_name+" is already legit")
                             return
 
                     # At this point we know the class's either new or not legit
@@ -126,12 +126,12 @@ class Bot(twitterbot.StandardBot):
                     self.cursor.execute("SELECT follower FROM votes WHERE follower=%s AND class=%s", (user['id'], class_id))
                     vote_exists = self.cursor.fetchone()
                     if vote_exists:
-                        self.notifyUser(screen_name, "You've already suggested this class.")
+                        self.notifyUser(screen_name, "You've already suggested this class")
                     else:
                         self.cursor.execute("UPDATE classes SET score=score+1 WHERE id=%s", (class_id))
                         self.cursor.execute("INSERT INTO votes(follower, class) VALUES(%s, %s)", (user['id'], class_id))
                         if not new_class:
-                            self.notifyUser(screen_name, "We've jotted down your interest in this class, we'll tweet you if it goes live.")
+                            self.notifyUser(screen_name, "We've jotted down your interest in this class, we'll tweet you if it goes live")
 
         elif init == 'add' and len(commands) > 1:
             if commands[1].startswith('class') and len(commands) > 2:
@@ -144,12 +144,12 @@ class Bot(twitterbot.StandardBot):
 
                     if class_data == None:
                         # This class doesn't exist; can't do anything.
-                        self.notifyUser(screen_name, "Bummer, this class doesn't exist yet. Suggest it by tweeting @findpassion suggest class "+class_name+".")
+                        self.notifyUser(screen_name, "Bummer, this class doesn't exist yet. Suggest it by tweeting @findpassion suggest class class-name")
                         return
                     else:
                         class_id = class_data[0]
                         if not class_data[1]: # Legit?
-                            self.notifyUser(screen_name, "This class isn't legit. Suggest it be legit by tweeting @findpassion suggest class "+class_name+".")
+                            self.notifyUser(screen_name, "This class isn't legit. Show interest in it by tweeting @findpassion suggest class class-name")
                             return
 
                     # At this point we know the class exists and is legit.
@@ -157,16 +157,15 @@ class Bot(twitterbot.StandardBot):
                     self.cursor.execute("SELECT follower FROM follower_classes WHERE follower=%s AND class=%s", (user['id'], class_id))
                     link_exists = self.cursor.fetchone()
                     if link_exists:
-                        self.notifyUser(screen_name, "You already have this class listed.")
+                        self.notifyUser(screen_name, "You already have "+class_name+" listed")
                     else:
                         self.cursor.execute("INSERT INTO follower_classes(follower, class) VALUES(%s, %s)", (user['id'], class_id))
-                        self.notifyUser(screen_name, "We've jotted this new class down in your profile.")
+                        self.notifyUser(screen_name, "We've jotted "+class_name+" down in your profile")
 
         elif init == 'remove' and len(commands) > 1:
             if commands[1].startswith('class') and len(commands) > 2:
                 for class_name in ' '.join(commands[2:]).split(','):
                     class_name = class_name.strip()
-                    class_name = ' '.join(commands[2:])
                     print "Removing class: "+class_name
                     self.cursor.execute("SELECT id, legit FROM classes WHERE name=%s", (class_name))
                     class_data = self.cursor.fetchone()
@@ -174,7 +173,7 @@ class Bot(twitterbot.StandardBot):
 
                     if class_data == None:
                         # This class doesn't exist; can't do anything.
-                        self.notifyUser(screen_name, "This class doesn't exist.")
+                        self.notifyUser(screen_name, "That class doesn't exist")
                         return
                     else:
                         class_id = class_data[0]
@@ -185,9 +184,9 @@ class Bot(twitterbot.StandardBot):
                     link_exists = self.cursor.fetchone()
                     if link_exists:
                         self.cursor.execute("DELETE FROM follower_classes WHERE follower=%s AND class=%s", (user['id'], class_id))
-                        self.notifyUser(screen_name, "We removed the class.")
+                        self.notifyUser(screen_name, "We removed "+class_name)
                     else:
-                        self.notifyUser(screen_name, "You don't have this class listed.")
+                        self.notifyUser(screen_name, "You don't have "+class_name+" listed")
 
 
         needs_update = False
