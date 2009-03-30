@@ -7,14 +7,19 @@
 }
 
 #bots .bot {
-  border: 2px solid #222;
+  border: 2px solid #fff;
+  background-color: #fff;
   float: left;
   padding: 0.5em;
   margin: 0.5em;
-  color: #999;
+  color: #3b5b5c;
 
-  -moz-border-radius: 5px;
-  -webkit-border-radius: 5px;
+  -moz-border-radius: 10px;
+  -webkit-border-radius: 10px;
+}
+
+#bots .bot a {
+  color: #145166;
 }
 
 #bots .bot .name {
@@ -24,10 +29,12 @@
 
 #bots .bot .header {
   display: none;
+  font-size: 1.8em;
+  font-weight: bold;
 }
 
 #bots .bot .commands .command {
-  color: #999;
+  color: #000;
   font-size: 1em;
   font-family: monospace;
   margin: 0.2em;
@@ -52,8 +59,11 @@
   display: none;
 }
 
+
+
 #bots .bot:hover {
-  border-color: #666;
+  -moz-border-radius: 20px;
+  -webkit-border-radius: 20px;
 }
 
 #bots .bot:hover .name {
@@ -61,8 +71,12 @@
 }
 
 #bots .bot:hover .header {
-  font-size: 1.5em;
   display: block;
+}
+
+#bots .bot:hover .commands .command {
+  font-size: 1.2em;
+  padding: 0.5em;
 }
 
 #bots .bot:hover .commands .command .parameters {

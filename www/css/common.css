@@ -3,10 +3,14 @@
  */
 
 html {
-  background-color: #000;
+  background-color: #caf2f4;
 }
 
 a {
-  color: #090;
+  color: #33ccff;
   text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
 }
