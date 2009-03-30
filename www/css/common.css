@@ -1,0 +1,12 @@
+/**
+ * Common styles.
+ */
+
+body {
+  background-color: #000;
+}
+
+a {
+  color: #090;
+  text-decoration: none;
+}

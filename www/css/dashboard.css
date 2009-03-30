@@ -1,0 +1,58 @@
+/**
+ * / style
+ */
+
+#bots {
+  padding: 1em;
+}
+
+#bots .bot {
+  border: 2px solid #222;
+  float: left;
+  padding: 0.5em;
+  color: #999;
+
+  -moz-border-radius: 5px;
+  -webkit-border-radius: 5px;
+}
+
+#bots .bot .name {
+  font-family: monospace;
+  text-align: center;
+}
+
+#bots .bot .header {
+  display: none;
+}
+
+#bots .bot .commands .command {
+  color: #999;
+  font-size: 1em;
+  font-family: monospace;
+  margin: 0.2em;
+}
+
+#bots .bot .commands .command .parameters {
+  display: none;
+}
+
+#bots .bot .commands .command .parameter {
+  font-style: italic;
+}
+
+#bots .bot:hover {
+  border-color: #666;
+}
+
+#bots .bot:hover .name {
+  font-size: 1.8em;
+}
+
+#bots .bot:hover .header {
+  font-size: 1.5em;
+  display: block;
+}
+
+#bots .bot:hover .commands .command .parameters {
+  display: inline;
+}
