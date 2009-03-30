@@ -2,6 +2,31 @@
  * / style
  */
 
+#header {
+  text-align: center;
+  font-size: 3em;
+  color: #3b5b5c;
+}
+
+#subheader {
+  text-align: center;
+  font-size: 1.5em;
+  color: #999;
+}
+
+#contact {
+  width: 300px;
+  padding: 1em;
+  margin: 1em;
+  margin: 0 auto;
+  border: 2px solid #fff;
+  background-color: #fff;
+  text-align: center;
+
+  -moz-border-radius: 10px;
+  -webkit-border-radius: 10px;
+}
+
 #bots {
   padding: 1em;
 }
@@ -16,10 +41,6 @@
 
   -moz-border-radius: 10px;
   -webkit-border-radius: 10px;
-}
-
-#bots .bot a {
-  color: #145166;
 }
 
 #bots .bot .name {
