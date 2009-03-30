@@ -54,6 +54,13 @@
   font-weight: bold;
 }
 
+#bots .bot .what {
+  display: none;
+  width: 400px;
+  margin: 0 auto;
+  line-height: 1.5em;
+}
+
 #bots .bot .commands .command {
   color: #000;
   font-size: 1em;
@@ -92,6 +99,10 @@
 }
 
 #bots .bot:hover .header {
+  display: block;
+}
+
+#bots .bot:hover .what {
   display: block;
 }
 
